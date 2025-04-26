@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Add a subtle transition for button clicks */
+        .calculator-button {
+            transition: background-color 0.1s ease-in-out;
+        }
+        /* Style for active (pressed) button */
+        .calculator-button:active {
+            transform: scale(0.98);
+        }
+        /* Ensure display text doesn't overflow */
+        #display {
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        #display::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="calculator bg-white rounded-lg shadow-xl p-6 w-full max-w-xs sm:max-w-sm md:max-w-md">
+        <div id="display" class="bg-gray-200 rounded-md p-4 mb-4 text-right text-3xl font-mono h-20 flex items-center justify-end">
+            0
+        </div>
+
+        <div class="grid grid-cols-4 gap-3">
+            <button onclick="clearDisplay()" class="calculator-button col-span-3 bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-lg text-xl">C</button>
+            <button onclick="chooseOperator('/')" class="calculator-button bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-lg text-xl">/</button>
+
+            <button onclick="appendNumber('7')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">7</button>
+            <button onclick="appendNumber('8')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">8</button>
+            <button onclick="appendNumber('9')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">9</button>
+            <button onclick="chooseOperator('*')" class="calculator-button bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-lg text-xl">*</button>
+
+            <button onclick="appendNumber('4')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">4</button>
+            <button onclick="appendNumber('5')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">5</button>
+            <button onclick="appendNumber('6')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">6</button>
+            <button onclick="chooseOperator('-')" class="calculator-button bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-lg text-xl">-</button>
+
+            <button onclick="appendNumber('1')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">1</button>
+            <button onclick="appendNumber('2')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">2</button>
+            <button onclick="appendNumber('3')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">3</button>
+            <button onclick="chooseOperator('+')" class="calculator-button bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-lg text-xl">+</button>
+
+            <button onclick="appendNumber('0')" class="calculator-button col-span-2 bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">0</button>
+            <button onclick="appendNumber('.')" class="calculator-button bg-gray-300 hover:bg-gray-400 text-black font-bold py-4 rounded-lg text-xl">.</button>
+            <button onclick="calculate()" class="calculator-button bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-lg text-xl">=</button>
+        </div>
+    </div>
+
+    <script>
+        // Get the display element
+        const display = document.getElementById('display');
+
+        // Calculator state variables
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = null;
+        let shouldResetDisplay = false;
+
+        // Function to update the display content
+        function updateDisplay() {
+            // Limit display length to avoid excessive overflow, adjust as needed
+            const maxLength = 15;
+            if (currentInput.length > maxLength) {
+                // Display in exponential notation if too long
+                display.textContent = parseFloat(currentInput).toExponential(9);
+            } else {
+                 display.textContent = currentInput;
+            }
+            // Adjust font size if the number gets too long (optional refinement)
+            if (currentInput.length > 10) {
+                display.classList.remove('text-3xl');
+                display.classList.add('text-2xl');
+            } else {
+                display.classList.remove('text-2xl');
+                display.classList.add('text-3xl');
+            }
+        }
+
+        // Function to append a number (0-9) or decimal point
+        function appendNumber(number) {
+            // If the display should be reset (after operator/equals), clear currentInput
+            if (shouldResetDisplay) {
+                currentInput = '';
+                shouldResetDisplay = false;
+            }
+            // Prevent multiple decimal points
+            if (number === '.' && currentInput.includes('.')) return;
+            // Handle starting input: replace '0' or append
+            if (currentInput === '0' && number !== '.') {
+                currentInput = number;
+            } else {
+                // Prevent excessively long inputs before calculation
+                if (currentInput.length >= 15) return;
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        // Function to handle operator selection (+, -, *, /)
+        function chooseOperator(selectedOperator) {
+            // If there's already a previous input and an operator, calculate first
+            if (operator !== null && !shouldResetDisplay) {
+                calculate();
+            }
+            // Store the current input as the previous input
+            previousInput = currentInput;
+            // Store the selected operator
+            operator = selectedOperator;
+            // Set flag to reset display for the next number input
+            shouldResetDisplay = true;
+        }
+
+        // Function to perform the calculation
+        function calculate() {
+            // Check if there's a valid operation to perform
+            if (operator === null || shouldResetDisplay) return;
+
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            // Check for invalid numbers (NaN)
+            if (isNaN(prev) || isNaN(current)) {
+                alert("Invalid input");
+                clearDisplay();
+                return;
+            }
+
+            let result;
+            // Perform calculation based on the operator
+            switch (operator) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    // Handle division by zero
+                    if (current === 0) {
+                        alert("Cannot divide by zero");
+                        clearDisplay();
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                default:
+                    return; // Should not happen
+            }
+
+            // Update currentInput with the result, convert to string
+            // Handle potential floating point inaccuracies for display (optional, basic rounding)
+            currentInput = parseFloat(result.toFixed(10)).toString();
+            operator = null;
+            previousInput = '';
+            shouldResetDisplay = true;
+            updateDisplay();
+        }
+
+        // Function to clear the display and reset calculator state
+        function clearDisplay() {
+            currentInput = '0';
+            previousInput = '';
+            operator = null;
+            shouldResetDisplay = false;
+            updateDisplay();
+        }
+
+        // Initialize display on load
+        updateDisplay();
+
+    </script>
+</body>
+</html>
